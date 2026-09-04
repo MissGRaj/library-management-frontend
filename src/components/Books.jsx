@@ -12,6 +12,13 @@ function Books() {
 
     const [editingId, setEditingId] = useState(null);
 
+    const [searchTitle, setSearchTitle] = useState("");
+    const [searchAuthor, setSearchAuthor] = useState("");
+    const [page, setPage] = useState(0);
+    const [size] = useState(5);
+    const [totalPages, setTotalPages] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(0);
+
     const navigate = useNavigate();
 
     const getBooks = async () => {
@@ -19,20 +26,44 @@ function Books() {
         try {
             
             const token = localStorage.getItem("token");
-            const response = await fetch("http://localhost:8080/books", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
+
+            const params = new URLSearchParams({
+                page: page,
+                size: size,
+                sortBy: "id",
+                direction: "asc"
             });
 
-            if (!response.ok) {
+            if (searchTitle.trim() !== "") {
+                params.append("title", searchTitle);
+            }
+
+            if (searchAuthor.trim() !== "") {
+                params.append("author", searchAuthor);
+            }
+            
+            const response = await fetch(
+                `http://localhost:8080/books/search?${params.toString()}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+            if (response.status === 401) {
+                localStorage.removeItem("token");
+                navigate("/login");
+                return;
+            }
+
+            if(!response.ok) {
                 throw new Error("Failed to fetch books");
             }
         
             const data = await response.json();
-            setBooks(data);
-        
+            setBooks(data.content);
+            setTotalPages(data.totalPages);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -41,8 +72,53 @@ function Books() {
 
     };
 
+
+    const validateBook = () => {
+
+        if (title.trim() === "" && author.trim() === "") {
+            alert("Please enter title and author.");
+            return false;
+        }
+
+        if (title.trim() === "") {
+            alert("Please enter the title.");
+            return false;
+        }
+
+        if (author.trim() === "") {
+            alert("Please enter the author.");
+            return false;
+        }
+
+        if (title.trim().length < 2) {
+            alert("Title must be at least 2 characters.");
+            return false;
+        }
+
+        if (author.trim().length < 2) {
+            alert("Author must be at least 2 characters.");
+            return false;
+        }
+
+        if (title.trim().length > 100) {
+            alert("Title must not exceed 100 characters.");
+            return false;
+        }
+
+        if (author.trim().length > 50) {
+            alert("Author must not exceed 50 characters.");
+            return false;
+        }
+
+        return true;
+    };
+
     const addBook = async (e) => {
         e.preventDefault();
+
+        if (!validateBook()) {
+            return;
+        }
 
         const token = localStorage.getItem("token");
         const response = await fetch("http://localhost:8080/books", {
@@ -57,9 +133,19 @@ function Books() {
             })
         });
 
+        if(response.status === 403) {
+            alert("You are not authorized to add books");
+            return;
+        }
+
+        if(response.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+        }
+
         if (!response.ok) {
             throw new Error("Failed to add book");
-            return;
         }
 
         setTitle("");
@@ -78,12 +164,22 @@ function Books() {
             }
         });
 
-        if (!response.ok) {
-            console.log("Failed to delete book");
+        if (response.status === 403) {
+            alert("You are not authorized to delete books.");
             return;
         }
 
-        getBooks();
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+        }
+
+        if (books.length === 1 && page > 0) {
+            setPage(page - 1);
+        } else {
+            getBooks();
+        }
     };
 
     const editBook = (book) => {
@@ -94,6 +190,10 @@ function Books() {
 
     const updateBook = async (e) => {
         e.preventDefault();
+
+        if (!validateBook()) {
+            return;
+        }
 
         const token = localStorage.getItem("token");
 
@@ -112,8 +212,14 @@ function Books() {
             }
         );
 
-        if (!response.ok) {
-            console.log("Failed to update book");
+        if (response.status === 403) {
+            alert("You are not authorized to update books.");
+            return;
+        }
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
             return;
         }
 
@@ -129,10 +235,17 @@ function Books() {
         navigate("/login");
     };
 
+    const clearSearch = () => {
+        setSearchTitle("");
+        setSearchAuthor("");
+        setPage(0);
+        setSearchVersion(searchVersion + 1);
+    };
+
 
     useEffect(() => {
         getBooks();
-    }, []);
+    }, [page, searchVersion]);
 
     if (loading) {
         return <div>Loading...</div>
@@ -143,35 +256,85 @@ function Books() {
     }
 
     return (
-        <div>
-            <h2>Books</h2>
+        <div className="books-container">
+            <h2 className="books-title">Books</h2>
 
-            <button onClick={logout}>Logout</button>
-            <form onSubmit={editingId === null ? addBook : updateBook}>
-                <div>
+            <button className="logout-button" onClick={logout}>Logout</button>
+
+            <form className="search-form" onSubmit={(e) => {
+                e.preventDefault();
+                setPage(0);
+                getBooks();
+            }}>
+                <div className="form-group">
+                    <label>Search Title</label>
+                    <input
+                        className="form-input"
+                        type="text"
+                        value={searchTitle}
+                        onChange={(e) => setSearchTitle(e.target.value)}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>Search Author</label>
+                    <input
+                        className="form-input"
+                        type="text"
+                        value={searchAuthor}
+                        onChange={(e) => setSearchAuthor(e.target.value)}
+                    />
+                </div>
+
+                <button className="search-button" type="submit">Search</button>
+                <button
+                    className="cancel-button"
+                    type="button"
+                    onClick={clearSearch}
+                >
+                    Clear
+                </button>
+            </form>
+
+
+            <form className="book-form" onSubmit={editingId === null ? addBook : updateBook}>
+                <div className="form-group">
                     <label>Title</label>
                     <input
+                        className="form-input"
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
                 </div>
 
-                <div>
+                <div className="form-group">
                     <label>Author</label>
                     <input
+                        className="form-input"
                         type="text"
                         value={author}
                         onChange={(e) => setAuthor(e.target.value)}
                     />
                 </div>
 
-                <button type="submit">
+                <button className="submit-button" type="submit">
                     {editingId === null ? "Add Book" : "Update Book"}
                 </button>
+
+                {editingId !== null && (
+                    <button className="cancel-button" type="button" onClick={() => {
+                        setEditingId(null);
+                        setTitle("");
+                        setAuthor("");
+                    }}>
+                        Cancel
+                    </button>
+                )}
+
             </form>
 
-            <table>
+            <table className="books-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -188,11 +351,11 @@ function Books() {
                             <td>{book.title}</td>
                             <td>{book.author}</td>
                             <td>
-                                <button onClick={() => editBook(book)}>
+                                <button className="edit-button" onClick={() => editBook(book)}>
                                     Edit
                                 </button>
 
-                                <button onClick={() => deleteBook(book.id)}>
+                                <button className="delete-button" onClick={() => deleteBook(book.id)}>
                                     Delete
                                 </button>
                             </td>
@@ -200,6 +363,28 @@ function Books() {
                     ))}
                 </tbody>
             </table>
+
+            <div className="pagination">
+                <button
+                    className="pagination-button"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 0}
+                >
+                    Previous
+                </button>
+
+                <span className="page-info">
+                    Page {page + 1} of {totalPages}
+                </span>
+
+                <button
+                    className="pagination-button"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages - 1}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 }
