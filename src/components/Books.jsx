@@ -43,7 +43,7 @@ function Books() {
             }
             
             const response = await fetch(
-                `http://localhost:8080/books/search?${params.toString()}`,
+                `https://libary-management-backend-production.up.railway.app/books/search?${params.toString()}`,
                 {
                     method: "GET",
                     headers: {
@@ -121,7 +121,7 @@ function Books() {
         }
 
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8080/books", {
+        const response = await fetch("https://libary-management-backend-production.up.railway.app/books", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -157,7 +157,7 @@ function Books() {
 
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`http://localhost:8080/books/${id}`, {
+        const response = await fetch(`https://libary-management-backend-production.up.railway.app/books/${id}`, {
             method: "DELETE",
             headers: {
                 "Authorization": `Bearer ${token}`
@@ -198,7 +198,7 @@ function Books() {
         const token = localStorage.getItem("token");
 
         const response = await fetch(
-            `http://localhost:8080/books/${editingId}`,
+            `https://libary-management-backend-production.up.railway.app/books/${editingId}`,
             {
                 method: "PUT",
                 headers: {
