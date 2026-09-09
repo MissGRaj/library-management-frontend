@@ -9,7 +9,7 @@ function Login() {
     const handleSubmit = async(e) => {
         e.preventDefault();
 
-        const response = await fetch("https://libary-management-backend-production.up.railway.app/auth/login", {
+        const response = await fetch("https://library-management-backend-production-2dc0.up.railway.app/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
