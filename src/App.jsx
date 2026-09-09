@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import Books from "./components/Books";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Register from "./components/Register";
 
 function App() {
     return (
@@ -19,6 +20,8 @@ function App() {
                         </ProtectedRoute>
                     } />
                     
+                    <Route path="/register" element={<Register />} />
+
                 </Routes>
             </div>
         </BrowserRouter>

@@ -48,6 +48,50 @@
   cursor: pointer;
 }
 
+.create-account-link {
+    display: block;
+    margin-top: 15px;
+    text-align: center;
+    color: #007bff;
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.create-account-link:hover {
+    text-decoration: underline;
+}
+
+.login-error {
+    margin-top: 15px;
+    text-align: center;
+    color: #dc3545;
+    font-size: 14px;
+}
+
+
+/* Register page */
+
+.back-login-link {
+    display: block;
+    margin-top: 15px;
+    text-align: center;
+    color: #007bff;
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.back-login-link:hover {
+    text-decoration: underline;
+}
+
+.login-success {
+    margin-top: 15px;
+    text-align: center;
+    color: #28a745;
+    font-size: 14px;
+}
 
 /* Books page */
 
