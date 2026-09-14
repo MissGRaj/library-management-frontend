@@ -4,6 +4,7 @@ import Login from "./components/Login";
 import Books from "./components/Books";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Register from "./components/Register";
+import Borrowings from "./components/Borrowings";
 
 function App() {
     return (
@@ -21,6 +22,15 @@ function App() {
                     } />
                     
                     <Route path="/register" element={<Register />} />
+
+                    <Route
+                        path="/borrowings"
+                        element={
+                            <ProtectedRoute>
+                                <Borrowings />
+                            </ProtectedRoute>
+                        }
+                    />
 
                 </Routes>
             </div>

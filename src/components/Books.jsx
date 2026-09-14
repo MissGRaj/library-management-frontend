@@ -9,6 +9,7 @@ function Books() {
 
     const [title, setTitle] = useState("");
     const [author, setAuthor] = useState("");
+    const [totalCopies, setTotalCopies] = useState(1);
 
     const [editingId, setEditingId] = useState(null);
 
@@ -129,7 +130,8 @@ function Books() {
             },
             body: JSON.stringify({ 
                 title:title, 
-                author:author
+                author:author,
+                totalCopies: Number(totalCopies)
             })
         });
 
@@ -230,6 +232,46 @@ function Books() {
         getBooks();
     };
 
+    const borrowBook = async (bookId) => {
+
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+            `https://library-management-backend-production-2dc0.up.railway.app/borrowings`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    bookId: bookId
+                })
+            }
+        );
+
+        if (response.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login");
+            return;
+        }
+
+        if (response.status === 409) {
+            const data = await response.json();
+            alert(data.message);
+            return;
+        }
+
+        if (!response.ok) {
+            alert("Failed to borrow book.");
+            return;
+        }
+
+        alert("Book borrowed successfully.");
+
+        getBooks();
+    };
+
     const logout = () => {
         localStorage.removeItem("token");
         navigate("/login");
@@ -259,7 +301,20 @@ function Books() {
         <div className="books-container">
             <h2 className="books-title">Books</h2>
 
-            <button className="logout-button" onClick={logout}>Logout</button>
+
+            <div className="top-actions">
+                <button
+                    className="borrowings-button"
+                    onClick={() => navigate("/borrowings")}
+                >
+                    My Borrowings
+                </button>
+
+                <button className="logout-button" onClick={logout}>
+                    Logout
+                </button>
+            </div>
+
 
             <form className="search-form" onSubmit={(e) => {
                 e.preventDefault();
@@ -318,6 +373,17 @@ function Books() {
                     />
                 </div>
 
+                <div className="form-group">
+                    <label>Total Copies</label>
+                    <input
+                        className="form-input"
+                        type="number"
+                        min="1"
+                        value={totalCopies}
+                        onChange={(e) => setTotalCopies(e.target.value)}
+                    />
+                </div>
+
                 <button className="submit-button" type="submit">
                     {editingId === null ? "Add Book" : "Update Book"}
                 </button>
@@ -340,6 +406,7 @@ function Books() {
                         <th>ID</th>
                         <th>Title</th>
                         <th>Author</th>
+                        <th>Availability</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -351,12 +418,23 @@ function Books() {
                             <td>{book.title}</td>
                             <td>{book.author}</td>
                             <td>
+                                {book.availableCopies} / {book.totalCopies}
+                            </td>
+                            <td>
                                 <button className="edit-button" onClick={() => editBook(book)}>
                                     Edit
                                 </button>
 
                                 <button className="delete-button" onClick={() => deleteBook(book.id)}>
                                     Delete
+                                </button>
+                                
+                                <button
+                                    className="borrow-button"
+                                    onClick={() => borrowBook(book.id)}
+                                    disabled={book.availableCopies === 0}
+                                >
+                                    {book.availableCopies === 0 ? "Unavailable" : "Borrow"}
                                 </button>
                             </td>
                         </tr>
